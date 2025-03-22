@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  sam-hello-world
+
+  Sample SAM Template for sam-hello-world
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  HelloWorldFunction: # Helps you define a resource called HelloWorldFunction, which represents a Lambda function
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: hello_world/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Events: # Helps you define an event associated with the resource. This case defines an API event, in which when the API gateway triggers GET /hello, it will trigger the function app.lambda_handler
+        HelloWorld:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /hello
+            Method: get
+
+# Summary:
+# - This CloudFormation template defines a Lambda function (HelloWorldFunction) that is triggered by an HTTP GET request to the /hello endpoint through an API Gateway.
+# - The Lambda function code is located in the hello_world/ directory, and the entry point to the Lambda function is the lambda_handler function inside the app.py file.
+# - The Lambda function is configured to run with the Python 3.13 runtime and uses the x86_64 architecture.
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  HelloWorldApi:
+    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+  HelloWorldFunction:
+    Description: "Hello World Lambda Function ARN"
+    Value: !GetAtt HelloWorldFunction.Arn
+  HelloWorldFunctionIamRole:
+    Description: "Implicit IAM Role created for Hello World function"
+    Value: !GetAtt HelloWorldFunctionRole.Arn
+
+# CloudFormation outputs from deployed stack
+# ---------------------------------------------------------------------------------------------------------------------------
+# Outputs                                                                                                                   
+# ---------------------------------------------------------------------------------------------------------------------------
+# Key                 HelloWorldFunctionIamRole                                                                             
+# Description         Implicit IAM Role created for Hello World function                                                    
+# Value               arn:aws:iam::354918364543:role/sam-hello-world-HelloWorldFunctionRole-aznwUycfl5D8                    
+#
+# Key                 HelloWorldApi                                                                                         
+# Description         API Gateway endpoint URL for Prod stage for Hello World function                                      
+# Value               https://jimesxpoab.execute-api.ap-northeast-2.amazonaws.com/Prod/hello/                               
+#
+# Key                 HelloWorldFunction                                                                                    
+# Description         Hello World Lambda Function ARN                                                                       
+# Value               arn:aws:lambda:ap-northeast-2:354918364543:function:sam-hello-world-HelloWorldFunction-QrsWtlVfLjKr   
+# ---------------------------------------------------------------------------------------------------------------------------
+
+# Summary:
+# HelloWorldApi outputs the URL of the API Gateway endpoint that triggers the Lambda function.
+# HelloWorldFunction outputs the ARN of the HelloWorldFunction Lambda function, which is a unique identifier for the function.
+# HelloWorldFunctionIamRole outputs the ARN of the IAM role automatically created for the Lambda function to manage its permissions.
