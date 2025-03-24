@@ -1,8 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: >
+Description: |
   sam-hello-world
-
   Sample SAM Template for sam-hello-world
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
@@ -11,39 +10,131 @@ Globals:
     Timeout: 3
 
 Resources:
-  HelloWorldFunction: # Helps you define a resource called HelloWorldFunction, which represents a Lambda function
+  ServerlessRestApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub ${ResourceName}FromStack-${AWS::StackName}
+      StageName: prod
+      DefinitionBody:
+        openapi: '3.0'
+        info:
+          title: My API
+          version: '1.0'
+        paths:
+          /:
+            get:
+              operationId: getHello
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HelloWorldFunction.Arn}/invocations
+          /texts:
+            post:
+              operationId: createText
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AddTextFunction.Arn}/invocations
+            get:
+              operationId: searchText
+              parameters:
+                - name: term
+                  in: query
+                  required: true
+                  schema:
+                    type: string
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetTextByTermFunction.Arn}/invocations
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      TracingEnabled: true
+  HelloWorldFunction:
+    # Helps you define a resource called HelloWorldFunction, which represents a Lambda function
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: hello_world/
-      Handler: app.lambda_handler
+      CodeUri: src/hello_world/
+      Handler: app.print_hello_world_lambda
       Runtime: python3.9
-      Architectures:
-        - x86_64
-      Events: # Helps you define an event associated with the resource. This case defines an API event, in which when the API gateway triggers GET /hello, it will trigger the function app.lambda_handler
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Events:
+        # Helps you define an event associated with the resource. This case defines an API event, in which when the API gateway triggers GET /hello, it will trigger the function app.lambda_handler
         HelloWorld:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
-            Path: /hello
+            Path: /
             Method: get
+  AddTextFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/add_text/
+      Handler: app.add_text_lambda
+      Runtime: python3.9
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Events:
+        AddText:
+          Type: Api
+          Properties:
+            Path: /texts
+            Method: POST
+  GetTextByTermFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/get_text/
+      Handler: app.get_text_lambda
+      Runtime: python3.9
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Events:
+        GetTextByTerm:
+          Type: Api
+          Properties:
+            Path: /texts
+            Method: GET
 
 # Summary:
 # - This CloudFormation template defines a Lambda function (HelloWorldFunction) that is triggered by an HTTP GET request to the /hello endpoint through an API Gateway.
 # - The Lambda function code is located in the hello_world/ directory, and the entry point to the Lambda function is the lambda_handler function inside the app.py file.
 # - The Lambda function is configured to run with the Python 3.13 runtime and uses the x86_64 architecture.
 
-Outputs:
-  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-  # Find out more about other implicit resources you can reference within SAM
-  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  HelloWorldApi:
-    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
-  HelloWorldFunction:
-    Description: "Hello World Lambda Function ARN"
-    Value: !GetAtt HelloWorldFunction.Arn
-  HelloWorldFunctionIamRole:
-    Description: "Implicit IAM Role created for Hello World function"
-    Value: !GetAtt HelloWorldFunctionRole.Arn
+# Outputs:
+#   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+#   # Find out more about other implicit resources you can reference within SAM
+#   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+#   HelloWorldApi:
+#     Description: API Gateway endpoint URL for Prod stage for Hello World function
+#     Value: !Sub https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com
+#   HelloWorldFunction:
+#     Description: Hello World Lambda Function ARN
+#     Value: !GetAtt HelloWorldFunction.Arn
+#   HelloWorldFunctionIamRole:
+#     Description: Implicit IAM Role created for Hello World function
+#     Value: !GetAtt HelloWorldFunctionRole.Arn
+#   AddTextFunctionApi:
+#     Description: API Gateway endpoint URL that adds text to DynamoDB
+#     Value: !Sub https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/texts
+#   AddTextFunction:
+#     Description: Add Text Lambda Function ARN
+#     Value: !GetAtt AddTextFunction.Arn
+#   AddTextFunctionIamRole:
+#     Description: Implicit IAM Role created for Add Text function
+#     Value: !GetAtt AddTextFunctionRole.Arn
+#   GetTextByTermFunctionApi:
+#     Description: API Gateway endpoint URL that retrieves text from DynamoDB
+#     Value: !Sub https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/texts
+#   GetTextByTermFunction:
+#     Description: Get Text Function ARN
+#     Value: !GetAtt GetTextByTermFunction.Arn
+#   GetTextByTermFunctionIamRole:
+#     Description: Implicit IAM Role created for Get Text function
+#     Value: !GetAtt GetTextByTermFunctionRole.Arn
 
 # CloudFormation outputs from deployed stack
 # ---------------------------------------------------------------------------------------------------------------------------
@@ -55,7 +146,7 @@ Outputs:
 #
 # Key                 HelloWorldApi                                                                                         
 # Description         API Gateway endpoint URL for Prod stage for Hello World function                                      
-# Value               https://jimesxpoab.execute-api.ap-northeast-2.amazonaws.com/Prod/hello/                               
+# Value               https://jimesxpoab.execute-api.ap-northeast-2.amazonaws.com/                               
 #
 # Key                 HelloWorldFunction                                                                                    
 # Description         Hello World Lambda Function ARN                                                                       

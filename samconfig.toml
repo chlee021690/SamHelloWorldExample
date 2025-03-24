@@ -1,9 +1,8 @@
-# More information about the configuration file can be found here:
-# https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-config.html
 version = 0.1
 
 [default.global.parameters]
 stack_name = "sam-hello-world"
+region = "ap-northeast-2"
 
 [default.build.parameters]
 cached = true
@@ -17,7 +16,6 @@ capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
 s3_prefix = "sam-hello-world"
-region = "ap-northeast-2"
 profile = "test-secret-key"
 image_repositories = []
 
@@ -26,6 +24,8 @@ resolve_s3 = true
 
 [default.sync.parameters]
 watch = true
+template_file = "/Users/changhyun-lee/Desktop/sam-hello-world/template.yaml"
+dependency_layer = false
 
 [default.local_start_api.parameters]
 warm_containers = "EAGER"
